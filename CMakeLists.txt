@@ -12,7 +12,6 @@
 # 2. Define INCLUDE_FMOD_SOUND cache entry, e.g. using `cmake -G Ninja -D INCLUDE_FMOD_SOUND=1 ..`
 
 cmake_minimum_required(VERSION 3.16)
-include(GenerateExportHeader) #CMake helpers to generate export header
 
 #Add our own cmake helper scripts for find_package(XPlaneSDK)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -82,12 +81,18 @@ set(SOURCE_FILES
 # Source list
 if(XPMP2_BUILD_SHARED_LIBS)
     add_library(XPMP2 SHARED ${SOURCE_FILES}) 
-    target_compile_definitions(XPMP2 PUBLIC XPMP2_EXPORTS)
+    # Only XPMP2 itself exports; users of the library must see the import declarations
+    target_compile_definitions(XPMP2 PRIVATE XPMP2_EXPORTS)
     target_link_libraries(${PROJECT_NAME} PRIVATE XPlaneSDK::XPLM XPlaneSDK::XPWidgets)
     if(WIN32)
         target_link_libraries(${PROJECT_NAME} PRIVATE wsock32 ws2_32 iphlpapi)
     endif()
 else()
+    # The target must exist before any option is attached to it
+    add_library(XPMP2 STATIC ${SOURCE_FILES})
+    target_compile_definitions(XPMP2 PUBLIC XPMP2_STATIC_DEFINE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE XPlaneSDK::XPLM XPlaneSDK::XPWidgets)
+
     # Debug vs Release build
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
         target_compile_definitions(XPMP2 PRIVATE DEBUG=1)
@@ -106,13 +111,11 @@ else()
             target_compile_options(XPMP2 PRIVATE -O3 -fPIC)
         endif()
     endif()
-    add_library(XPMP2 STATIC ${SOURCE_FILES})
-    target_compile_definitions(XPMP2 PUBLIC XPMP2_STATIC_DEFINE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE XPlaneSDK::XPLM XPlaneSDK::XPWidgets)
 endif()
 
-#Generate the export header file. It is already part of the public header but we update it just in case
-generate_export_header(XPMP2 EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/inc/XPMP2Export.h)
+# The export macros come from inc/XPMP2Export.h, which is hand-maintained and portable.
+# Do not regenerate it with generate_export_header(): the generated file is compiler
+# specific and would be rewritten for the current platform on every configure.
 
 # Provide compile macros from the above project version definition
 target_compile_definitions(XPMP2 PRIVATE
