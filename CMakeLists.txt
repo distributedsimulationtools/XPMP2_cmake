@@ -80,7 +80,10 @@ set(SOURCE_FILES
 if(XPMP2_BUILD_SHARED_LIBS)
     add_library(XPMP2 SHARED ${SOURCE_FILES}) 
     target_compile_definitions(XPMP2 PUBLIC XPMP2_EXPORTS)
-    target_link_libraries(${PROJECT_NAME} PRIVATE wsock32 ws2_32 iphlpapi XPlaneSDK::XPLM XPlaneSDK::XPWidgets)
+    target_link_libraries(${PROJECT_NAME} PRIVATE XPlaneSDK::XPLM XPlaneSDK::XPWidgets)
+    if(WIN32)
+        target_link_libraries(${PROJECT_NAME} PRIVATE wsock32 ws2_32 iphlpapi)
+    endif()
 else()
     # Debug vs Release build
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
