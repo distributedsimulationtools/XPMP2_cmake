@@ -86,6 +86,9 @@ if(XPMP2_BUILD_SHARED_LIBS)
     target_link_libraries(${PROJECT_NAME} PRIVATE XPlaneSDK::XPLM XPlaneSDK::XPWidgets)
     if(WIN32)
         target_link_libraries(${PROJECT_NAME} PRIVATE wsock32 ws2_32 iphlpapi)
+    elseif(APPLE)
+        # HFS2PosixPath / Posix2HFSPath (Utilities.cpp) use CoreFoundation
+        target_link_libraries(${PROJECT_NAME} PRIVATE "-framework CoreFoundation")
     endif()
 else()
     # The target must exist before any option is attached to it
